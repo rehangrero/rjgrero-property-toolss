@@ -1,0 +1,673 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Asset Intelligence Score — RJ Grero Property Advisory</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500;600&family=DM+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --gold: #C9A96E;
+    --gold-light: #E8D5A3;
+    --gold-dim: #8B6F47;
+    --dark: #0A0A0A;
+    --dark-2: #111111;
+    --dark-3: #1A1A1A;
+    --dark-4: #222222;
+    --dark-5: #2A2A2A;
+    --border: rgba(201, 169, 110, 0.15);
+    --border-strong: rgba(201, 169, 110, 0.4);
+    --text: #E8E8E0;
+    --text-dim: #888880;
+    --text-muted: #444440;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    background: var(--dark);
+    color: var(--text);
+    font-family: 'DM Mono', monospace;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(201,169,110,0.025) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(201,169,110,0.025) 1px, transparent 1px);
+    background-size: 40px 40px;
+    pointer-events: none;
+    z-index: 0;
+  }
+  .container { max-width: 980px; margin: 0 auto; padding: 0 24px; position: relative; z-index: 1; }
+
+  header { padding: 48px 0 32px; border-bottom: 1px solid var(--border); }
+  .brand { font-family: 'Cormorant Garamond', serif; font-size: 11px; font-weight: 400; letter-spacing: 0.3em; color: var(--gold); text-transform: uppercase; margin-bottom: 16px; }
+  h1 { font-family: 'Cormorant Garamond', serif; font-size: clamp(26px, 4vw, 40px); font-weight: 300; letter-spacing: -0.01em; line-height: 1.1; margin-bottom: 6px; }
+  h1 span { color: var(--gold); font-weight: 500; }
+  .subtitle { font-size: 10px; color: var(--text-dim); letter-spacing: 0.12em; }
+
+  /* Asset ID */
+  .asset-input-section { padding: 32px 0 24px; border-bottom: 1px solid var(--border); }
+  .section-label { font-size: 9px; letter-spacing: 0.3em; color: var(--gold-dim); text-transform: uppercase; margin-bottom: 10px; }
+  .asset-field { display: flex; gap: 12px; flex-wrap: wrap; }
+  .field-group { display: flex; flex-direction: column; gap: 5px; }
+  .field-group label { font-size: 9px; letter-spacing: 0.2em; color: var(--text-dim); text-transform: uppercase; }
+  input[type="text"] {
+    background: var(--dark-3); border: 1px solid var(--border); color: var(--text);
+    font-family: 'DM Mono', monospace; font-size: 12px; padding: 9px 13px; outline: none; transition: border-color 0.2s;
+  }
+  input[type="text"]:focus { border-color: var(--gold); }
+  .field-name { flex: 1; min-width: 220px; }
+  .field-name input { width: 100%; }
+  .field-type input { width: 150px; }
+  .field-loc input { width: 170px; }
+
+  /* Dimensions */
+  .scoring-section { padding: 32px 0; }
+  .scoring-intro { font-size: 9px; color: var(--text-muted); letter-spacing: 0.12em; margin-bottom: 24px; line-height: 1.8; }
+
+  .dimension-card {
+    border: 1px solid var(--border);
+    margin-bottom: 8px;
+    transition: border-color 0.2s;
+    background: var(--dark-2);
+  }
+  .dimension-card:hover { border-color: rgba(201,169,110,0.3); }
+
+  .dim-header {
+    display: grid;
+    grid-template-columns: 1fr auto auto;
+    gap: 16px;
+    align-items: center;
+    padding: 16px 20px;
+    cursor: pointer;
+    user-select: none;
+  }
+
+  .dim-header-left { display: flex; flex-direction: column; gap: 3px; }
+  .dim-title { font-size: 11px; letter-spacing: 0.12em; color: var(--text); text-transform: uppercase; display: flex; align-items: center; gap: 8px; }
+  .dim-title::before { content: ''; width: 3px; height: 3px; background: var(--gold-dim); display: inline-block; flex-shrink: 0; }
+  .dim-desc { font-size: 9px; color: var(--text-muted); letter-spacing: 0.06em; }
+
+  .dim-score-chip {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 24px;
+    font-weight: 500;
+    color: var(--gold);
+    line-height: 1;
+    min-width: 48px;
+    text-align: right;
+  }
+  .dim-score-chip span { font-size: 10px; color: var(--text-muted); font-family: 'DM Mono', monospace; }
+
+  .dim-toggle {
+    font-size: 14px;
+    color: var(--text-muted);
+    width: 20px;
+    text-align: center;
+    transition: transform 0.2s, color 0.2s;
+  }
+  .dim-toggle.open { transform: rotate(180deg); color: var(--gold); }
+
+  .dim-body {
+    display: none;
+    padding: 0 20px 20px;
+    border-top: 1px solid var(--border);
+  }
+  .dim-body.open { display: block; }
+
+  .sub-criteria-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 16px;
+    padding-top: 16px;
+  }
+
+  .sub-criterion {
+    background: var(--dark-3);
+    border: 1px solid rgba(201,169,110,0.08);
+    padding: 14px 16px;
+  }
+
+  .sub-header { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 8px; }
+  .sub-name { font-size: 9px; letter-spacing: 0.18em; color: var(--text-dim); text-transform: uppercase; }
+  .sub-val {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 18px;
+    color: var(--gold);
+    line-height: 1;
+    min-width: 28px;
+    text-align: right;
+  }
+
+  .sub-desc { font-size: 9px; color: var(--text-muted); letter-spacing: 0.04em; margin-bottom: 10px; line-height: 1.5; }
+
+  input[type="range"] {
+    -webkit-appearance: none;
+    width: 100%;
+    height: 2px;
+    background: var(--dark-4);
+    outline: none;
+    cursor: pointer;
+  }
+  input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 12px; height: 12px;
+    background: var(--gold);
+    border-radius: 50%;
+    cursor: pointer;
+    transition: transform 0.15s, box-shadow 0.15s;
+  }
+  input[type="range"]:hover::-webkit-slider-thumb {
+    transform: scale(1.3);
+    box-shadow: 0 0 10px rgba(201,169,110,0.4);
+  }
+
+  /* Computed note */
+  .computed-note {
+    margin-top: 14px;
+    padding: 10px 14px;
+    background: rgba(201,169,110,0.04);
+    border-left: 2px solid var(--gold-dim);
+    font-size: 9px;
+    color: var(--text-muted);
+    letter-spacing: 0.08em;
+    line-height: 1.7;
+  }
+  .computed-note strong { color: var(--gold-dim); font-weight: 400; }
+
+  /* Actions */
+  .actions { padding: 24px 0 32px; display: flex; gap: 12px; flex-wrap: wrap; align-items: center; }
+  .btn-generate {
+    background: var(--gold); color: var(--dark); border: none;
+    font-family: 'DM Mono', monospace; font-size: 10px; letter-spacing: 0.25em;
+    text-transform: uppercase; padding: 14px 32px; cursor: pointer;
+    transition: background 0.2s, transform 0.15s;
+  }
+  .btn-generate:hover { background: var(--gold-light); transform: translateY(-1px); }
+  .btn-reset {
+    background: transparent; color: var(--text-dim); border: 1px solid var(--border);
+    font-family: 'DM Mono', monospace; font-size: 10px; letter-spacing: 0.2em;
+    text-transform: uppercase; padding: 14px 24px; cursor: pointer;
+    transition: border-color 0.2s, color 0.2s;
+  }
+  .btn-reset:hover { border-color: var(--gold); color: var(--gold); }
+
+  /* Results */
+  .results-panel { border: 1px solid var(--border-strong); background: var(--dark-2); opacity: 0; transform: translateY(16px); transition: opacity 0.4s, transform 0.4s; }
+  .results-panel.visible { opacity: 1; transform: translateY(0); }
+
+  .results-header {
+    padding: 28px 32px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    flex-wrap: wrap;
+    gap: 16px;
+  }
+  .asset-tag { font-size: 9px; letter-spacing: 0.3em; color: var(--gold-dim); text-transform: uppercase; margin-bottom: 4px; }
+  .asset-name-display { font-family: 'Cormorant Garamond', serif; font-size: 22px; font-weight: 500; }
+  .asset-meta { font-size: 10px; color: var(--text-dim); letter-spacing: 0.08em; margin-top: 2px; }
+
+  .total-score-display { text-align: right; display: flex; flex-direction: column; align-items: flex-end; gap: 4px; }
+  .total-num { font-family: 'Cormorant Garamond', serif; font-size: 60px; font-weight: 300; line-height: 1; color: var(--gold); letter-spacing: -0.02em; }
+  .total-denom { font-size: 9px; color: var(--text-muted); letter-spacing: 0.2em; }
+  .health-badge { font-size: 9px; letter-spacing: 0.25em; text-transform: uppercase; padding: 4px 10px; border: 1px solid; margin-top: 4px; }
+
+  .score-breakdown {
+    padding: 24px 32px;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 0;
+    border-bottom: 1px solid var(--border);
+  }
+  .score-item { padding: 11px 0; border-bottom: 1px solid rgba(201,169,110,0.06); display: flex; justify-content: space-between; align-items: baseline; padding-right: 20px; }
+  .score-item-label { font-size: 9px; letter-spacing: 0.12em; color: var(--text-dim); text-transform: uppercase; }
+  .score-item-val { font-family: 'Cormorant Garamond', serif; font-size: 18px; font-weight: 500; color: var(--text); }
+
+  .bar-chart { padding: 24px 32px; border-bottom: 1px solid var(--border); display: flex; flex-direction: column; gap: 10px; }
+  .bar-row { display: grid; grid-template-columns: 180px 1fr 36px; gap: 12px; align-items: center; }
+  .bar-label { font-size: 9px; letter-spacing: 0.1em; color: var(--text-muted); text-transform: uppercase; text-align: right; }
+  .bar-outer { height: 2px; background: var(--dark-4); position: relative; }
+  .bar-fill { height: 100%; background: var(--gold); width: 0%; transition: width 0.8s cubic-bezier(0.16,1,0.3,1); position: relative; }
+  .bar-fill::after { content: ''; position: absolute; right: 0; top: -2px; width: 3px; height: 6px; background: var(--gold-light); }
+  .bar-num { font-family: 'Cormorant Garamond', serif; font-size: 14px; color: var(--gold); text-align: right; }
+
+  .radar-container { padding: 28px 32px 24px; display: flex; flex-direction: column; align-items: center; gap: 12px; }
+  .radar-label-top { font-size: 9px; letter-spacing: 0.25em; color: var(--text-muted); text-transform: uppercase; }
+  canvas#radarChart { max-width: 360px; width: 100%; }
+
+  footer { padding: 28px 0 48px; border-top: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; margin-top: 48px; }
+  .footer-brand { font-family: 'Cormorant Garamond', serif; font-size: 14px; color: var(--gold-dim); letter-spacing: 0.1em; }
+  .footer-note { font-size: 9px; color: var(--text-muted); letter-spacing: 0.12em; text-transform: uppercase; }
+
+  @media (max-width: 600px) {
+    .bar-row { grid-template-columns: 110px 1fr 30px; }
+    .sub-criteria-grid { grid-template-columns: 1fr; }
+    .score-breakdown { grid-template-columns: 1fr 1fr; }
+  }
+</style>
+</head>
+<body>
+<div class="container">
+  <header>
+    <div class="brand">RJ Grero Property Advisory — Asset Intelligence System</div>
+    <h1>Property <span>Health Score</span></h1>
+    <div class="subtitle">Sub-criteria weighted evaluation — each dimension computed from underlying factors</div>
+  </header>
+
+  <div class="asset-input-section">
+    <div class="section-label">Asset Identification</div>
+    <div class="asset-field">
+      <div class="field-group field-name"><label>Asset Name</label><input type="text" id="assetName" placeholder="e.g. 2 Bed — Colombo 3, Monarch" /></div>
+      <div class="field-group field-type"><label>Asset Type</label><input type="text" id="assetType" placeholder="e.g. Residential" /></div>
+      <div class="field-group field-loc"><label>Location</label><input type="text" id="assetLocation" placeholder="e.g. Colombo 3" /></div>
+    </div>
+  </div>
+
+  <div class="scoring-section">
+    <div class="section-label" style="margin-bottom:6px;">Scoring Dimensions</div>
+    <div class="scoring-intro">Each dimension is scored automatically from its underlying criteria. Expand any dimension to adjust its sub-factors. The parent score is the weighted average of all sub-criteria.</div>
+    <div id="dimensionsContainer"></div>
+
+    <div class="actions">
+      <button class="btn-generate" onclick="generateScore()">Generate Score Report</button>
+      <button class="btn-reset" onclick="resetAll()">Reset</button>
+    </div>
+  </div>
+
+  <div class="results-panel" id="resultsPanel">
+    <div class="results-header">
+      <div class="asset-identity">
+        <div class="asset-tag">Asset Intelligence Report</div>
+        <div class="asset-name-display" id="resultName">—</div>
+        <div class="asset-meta" id="resultMeta">—</div>
+      </div>
+      <div class="total-score-display">
+        <div class="total-num" id="totalScoreNum">0.0</div>
+        <div class="total-denom">OUT OF 100</div>
+        <div class="health-badge" id="healthBadge">—</div>
+      </div>
+    </div>
+    <div class="score-breakdown" id="scoreBreakdown"></div>
+    <div class="bar-chart" id="barChart"></div>
+    <div class="radar-container">
+      <div class="radar-label-top">Asset Profile Radar</div>
+      <canvas id="radarChart" width="360" height="360"></canvas>
+    </div>
+  </div>
+
+  <footer>
+    <div class="footer-brand">RJ Grero Property Advisory</div>
+    <div class="footer-note">Proprietary Scoring Framework — Confidential</div>
+  </footer>
+</div>
+
+<script>
+const schema = [
+  {
+    key: 'reputation',
+    label: 'Reputation',
+    desc: 'Location prestige & developer credibility',
+    sub: [
+      { key: 'location_prestige',     label: 'Location Prestige',       desc: 'Recognition and desirability of the address or district', default: 7 },
+      { key: 'developer_credibility', label: 'Developer Credibility',    desc: 'Track record, delivery history and brand standing of developer', default: 7 },
+      { key: 'project_quality',       label: 'Project Build Quality',    desc: 'Construction standards, finishing quality, materials used', default: 7 },
+    ]
+  },
+  {
+    key: 'qol',
+    label: 'Quality of Life',
+    desc: 'Amenities, liveability & infrastructure',
+    sub: [
+      { key: 'amenities',      label: 'Amenities Access',    desc: 'Proximity to retail, dining, healthcare, leisure, schools', default: 7 },
+      { key: 'liveability',    label: 'Liveability Index',   desc: 'Safety, noise, green space, community character', default: 7 },
+      { key: 'infrastructure', label: 'Infrastructure',      desc: 'Road access, public transport, utilities, connectivity', default: 7 },
+    ]
+  },
+  {
+    key: 'gdp',
+    label: 'GDP Context',
+    desc: 'Economic growth context of the area',
+    sub: [
+      { key: 'area_gdp_growth',   label: 'Area GDP Growth',     desc: 'Historical and projected economic growth of the district or city', default: 6 },
+      { key: 'employment_base',   label: 'Employment Base',     desc: 'Strength and diversity of local employment drivers', default: 6 },
+      { key: 'macro_stability',   label: 'Macro Stability',     desc: 'National economic stability, inflation, FX, and policy environment', default: 6 },
+    ]
+  },
+  {
+    key: 'investment',
+    label: 'Investment Amount',
+    desc: 'Capital efficiency relative to market',
+    sub: [
+      { key: 'price_per_sqft',   label: 'Price vs Market Rate',  desc: 'Asset price relative to comparable market rate per sq ft', default: 7 },
+      { key: 'entry_cost',       label: 'Total Entry Cost',       desc: 'All-in acquisition cost including taxes, fees, fit-out', default: 7 },
+      { key: 'capital_exposure', label: 'Capital Concentration',  desc: 'Risk of over-exposure relative to portfolio or budget', default: 7 },
+    ]
+  },
+  {
+    key: 'rental',
+    label: 'Rental Income',
+    desc: 'Yield potential & rental demand',
+    sub: [
+      { key: 'gross_yield',      label: 'Gross Yield',        desc: 'Annual rental income as a percentage of acquisition price', default: 7 },
+      { key: 'rental_demand',    label: 'Rental Demand',      desc: 'Depth of tenant demand in the local market for this asset type', default: 7 },
+      { key: 'vacancy_risk',     label: 'Vacancy Risk',       desc: 'Likelihood of periods without rental income — lower is better', default: 7 },
+    ]
+  },
+  {
+    key: 'costs',
+    label: 'Property Costs',
+    desc: 'Ongoing costs, maintenance & levies',
+    sub: [
+      { key: 'maintenance',    label: 'Maintenance Cost',   desc: 'Annual upkeep, repairs, and general maintenance burden', default: 7 },
+      { key: 'levies',         label: 'Levies & Service Charges', desc: 'Strata levies, building management fees, service charges', default: 7 },
+      { key: 'tax_burden',     label: 'Tax Burden',         desc: 'Annual property taxes, municipal rates, and related obligations', default: 7 },
+    ]
+  },
+  {
+    key: 'processing',
+    label: 'Processing Efficiency',
+    desc: 'Legal, title & transaction speed',
+    sub: [
+      { key: 'title_clarity',  label: 'Title Clarity',       desc: 'Clean, undisputed title with full traceability of ownership', default: 7 },
+      { key: 'legal_process',  label: 'Legal Process Speed', desc: 'Efficiency of legal, notarial, and registration processes', default: 7 },
+      { key: 'due_diligence',  label: 'Due Diligence Risk',  desc: 'Complexity and risk level of pre-acquisition due diligence', default: 7 },
+    ]
+  },
+  {
+    key: 'holding',
+    label: 'Holding Period',
+    desc: 'Liquidity & exit timeline',
+    sub: [
+      { key: 'optimal_hold',   label: 'Optimal Hold Duration', desc: 'Expected time to peak value realisation or optimal exit window', default: 7 },
+      { key: 'liquidity',      label: 'Market Liquidity',      desc: 'Ease of selling or exiting the asset at market price', default: 7 },
+      { key: 'capital_growth', label: 'Capital Growth Rate',   desc: 'Expected rate of appreciation over the holding period', default: 7 },
+    ]
+  },
+  {
+    key: 'residence',
+    label: 'Residence Requirements',
+    desc: 'Ownership restrictions & residency conditions',
+    sub: [
+      { key: 'foreign_ownership', label: 'Foreign Ownership Rules', desc: 'Restrictions or allowances for non-citizen ownership', default: 7 },
+      { key: 'visa_conditions',   label: 'Visa or Residency Conditions', desc: 'Whether ownership requires or enables visa or residency status', default: 7 },
+      { key: 'compliance_burden', label: 'Compliance Burden',  desc: 'Administrative obligations imposed on owner by residency rules', default: 7 },
+    ]
+  },
+  {
+    key: 'restrictions',
+    label: 'Restrictions',
+    desc: 'Legal, zoning & transfer limitations',
+    sub: [
+      { key: 'zoning_risk',    label: 'Zoning Risk',         desc: 'Risk of rezoning or land use changes affecting asset value', default: 7 },
+      { key: 'transfer_rules', label: 'Transfer Restrictions', desc: 'Limitations on resale, gifting, or transfer of title', default: 7 },
+      { key: 'encumbrances',   label: 'Encumbrances',        desc: 'Existing charges, mortgages, easements, or third-party claims', default: 7 },
+    ]
+  },
+  {
+    key: 'salability',
+    label: 'Salability',
+    desc: 'Exit demand, market depth & resale potential',
+    sub: [
+      { key: 'exit_demand',    label: 'Exit Demand',         desc: 'Depth and strength of buyer demand for this asset type on resale', default: 7 },
+      { key: 'market_depth',   label: 'Market Depth',        desc: 'Number of active buyers and comparable transactions in the market', default: 7 },
+      { key: 'resale_premium', label: 'Resale Premium',      desc: 'Potential to command a price premium over acquisition cost on exit', default: 7 },
+    ]
+  },
+];
+
+function computeDimScore(dimKey) {
+  const dim = schema.find(d => d.key === dimKey);
+  if (!dim) return 0;
+  const vals = dim.sub.map(s => parseFloat(document.getElementById(`sub_${dimKey}_${s.key}`).value));
+  return vals.reduce((a, b) => a + b, 0) / vals.length;
+}
+
+function updateSubSlider(dimKey, subKey, val) {
+  document.getElementById(`subval_${dimKey}_${subKey}`).textContent = parseFloat(val).toFixed(1);
+  updateSliderBg(`sub_${dimKey}_${subKey}`, val);
+  // Recompute parent
+  const score = computeDimScore(dimKey);
+  document.getElementById(`dimscore_${dimKey}`).innerHTML = score.toFixed(1) + '<span>/10</span>';
+  updateSliderBg(`sub_${dimKey}_${subKey}`, val);
+}
+
+function updateSliderBg(id, val) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  const pct = ((parseFloat(val) - 1) / 9) * 100;
+  el.style.background = `linear-gradient(to right, #C9A96E ${pct}%, #222 ${pct}%)`;
+}
+
+function toggleDim(key) {
+  const body = document.getElementById(`dimbody_${key}`);
+  const toggle = document.getElementById(`dimtoggle_${key}`);
+  body.classList.toggle('open');
+  toggle.classList.toggle('open');
+}
+
+// Build UI
+const container = document.getElementById('dimensionsContainer');
+schema.forEach(dim => {
+  const card = document.createElement('div');
+  card.className = 'dimension-card';
+  card.id = `dimcard_${dim.key}`;
+
+  const subHtml = dim.sub.map(s => `
+    <div class="sub-criterion">
+      <div class="sub-header">
+        <div class="sub-name">${s.label}</div>
+        <div class="sub-val" id="subval_${dim.key}_${s.key}">${s.default.toFixed(1)}</div>
+      </div>
+      <div class="sub-desc">${s.desc}</div>
+      <input type="range" min="1" max="10" step="0.1" value="${s.default}"
+             id="sub_${dim.key}_${s.key}"
+             oninput="updateSubSlider('${dim.key}','${s.key}',this.value)" />
+    </div>
+  `).join('');
+
+  const initScore = dim.sub.reduce((a, s) => a + s.default, 0) / dim.sub.length;
+
+  card.innerHTML = `
+    <div class="dim-header" onclick="toggleDim('${dim.key}')">
+      <div class="dim-header-left">
+        <div class="dim-title">${dim.label}</div>
+        <div class="dim-desc">${dim.desc}</div>
+      </div>
+      <div class="dim-score-chip" id="dimscore_${dim.key}">${initScore.toFixed(1)}<span>/10</span></div>
+      <div class="dim-toggle" id="dimtoggle_${dim.key}">▾</div>
+    </div>
+    <div class="dim-body" id="dimbody_${dim.key}">
+      <div class="sub-criteria-grid">${subHtml}</div>
+      <div class="computed-note">
+        <strong>Computed Score:</strong> Average of ${dim.sub.length} sub-criteria above. Adjust each factor independently to reflect your assessment of this specific asset.
+      </div>
+    </div>
+  `;
+  container.appendChild(card);
+
+  // Init slider backgrounds
+  dim.sub.forEach(s => updateSliderBg(`sub_${dim.key}_${s.key}`, s.default));
+});
+
+function getAllScores() {
+  const scores = {};
+  schema.forEach(d => { scores[d.key] = computeDimScore(d.key); });
+  return scores;
+}
+
+function getTotal(scores) {
+  const vals = Object.values(scores);
+  return (vals.reduce((a, b) => a + b, 0) / vals.length) * 10;
+}
+
+function getHealthLabel(total) {
+  if (total >= 85) return { label: 'EXCEPTIONAL', color: '#C9A96E' };
+  if (total >= 72) return { label: 'STRONG BUY',  color: '#A8C49A' };
+  if (total >= 58) return { label: 'MODERATE',    color: '#C4B48A' };
+  if (total >= 42) return { label: 'CAUTIOUS',    color: '#C4956A' };
+  return                  { label: 'HIGH RISK',   color: '#C47A6A' };
+}
+
+function generateScore() {
+  const name   = document.getElementById('assetName').value || 'Unnamed Asset';
+  const type   = document.getElementById('assetType').value || 'Property';
+  const loc    = document.getElementById('assetLocation').value || 'Location TBC';
+  const scores = getAllScores();
+  const total  = getTotal(scores);
+  const health = getHealthLabel(total);
+
+  document.getElementById('resultName').textContent = name;
+  document.getElementById('resultMeta').textContent = `${type}  ·  ${loc}`;
+  animateCount('totalScoreNum', total);
+
+  const badge = document.getElementById('healthBadge');
+  badge.textContent = health.label;
+  badge.style.color = health.color;
+  badge.style.borderColor = health.color;
+
+  // Breakdown
+  const breakdown = document.getElementById('scoreBreakdown');
+  breakdown.innerHTML = '';
+  schema.forEach(d => {
+    const item = document.createElement('div');
+    item.className = 'score-item';
+    item.innerHTML = `<span class="score-item-label">${d.label}</span><span class="score-item-val">${scores[d.key].toFixed(1)}</span>`;
+    breakdown.appendChild(item);
+  });
+
+  // Bar chart
+  const barChart = document.getElementById('barChart');
+  barChart.innerHTML = '';
+  schema.forEach(d => {
+    const row = document.createElement('div');
+    row.className = 'bar-row';
+    row.innerHTML = `
+      <div class="bar-label">${d.label}</div>
+      <div class="bar-outer"><div class="bar-fill" id="bar_${d.key}"></div></div>
+      <div class="bar-num">${scores[d.key].toFixed(1)}</div>
+    `;
+    barChart.appendChild(row);
+  });
+  setTimeout(() => {
+    schema.forEach(d => {
+      const bar = document.getElementById(`bar_${d.key}`);
+      if (bar) bar.style.width = (scores[d.key] / 10 * 100) + '%';
+    });
+  }, 80);
+
+  const panel = document.getElementById('resultsPanel');
+  panel.classList.add('visible');
+  setTimeout(() => panel.scrollIntoView({ behavior: 'smooth', block: 'nearest' }), 100);
+  setTimeout(() => drawRadar(scores), 200);
+}
+
+function animateCount(id, target) {
+  const el = document.getElementById(id);
+  let current = 0;
+  const step = target / 40;
+  const timer = setInterval(() => {
+    current = Math.min(current + step, target);
+    el.textContent = current.toFixed(1);
+    if (current >= target) clearInterval(timer);
+  }, 18);
+}
+
+function drawRadar(scores) {
+  const canvas = document.getElementById('radarChart');
+  const ctx = canvas.getContext('2d');
+  const W = canvas.width, H = canvas.height;
+  const cx = W / 2, cy = H / 2;
+  const r = Math.min(W, H) / 2 - 48;
+  const keys = Object.keys(scores);
+  const n = keys.length;
+  const gold = '#C9A96E';
+
+  ctx.clearRect(0, 0, W, H);
+
+  for (let ring = 1; ring <= 5; ring++) {
+    const rr = r * ring / 5;
+    ctx.beginPath();
+    for (let i = 0; i < n; i++) {
+      const angle = (i / n) * 2 * Math.PI - Math.PI / 2;
+      const x = cx + rr * Math.cos(angle);
+      const y = cy + rr * Math.sin(angle);
+      i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+    }
+    ctx.closePath();
+    ctx.strokeStyle = 'rgba(201,169,110,0.1)';
+    ctx.lineWidth = 0.5;
+    ctx.stroke();
+  }
+
+  for (let i = 0; i < n; i++) {
+    const angle = (i / n) * 2 * Math.PI - Math.PI / 2;
+    ctx.beginPath();
+    ctx.moveTo(cx, cy);
+    ctx.lineTo(cx + r * Math.cos(angle), cy + r * Math.sin(angle));
+    ctx.strokeStyle = 'rgba(201,169,110,0.1)';
+    ctx.lineWidth = 0.5;
+    ctx.stroke();
+  }
+
+  ctx.beginPath();
+  keys.forEach((k, i) => {
+    const val = scores[k] / 10;
+    const angle = (i / n) * 2 * Math.PI - Math.PI / 2;
+    const x = cx + r * val * Math.cos(angle);
+    const y = cy + r * val * Math.sin(angle);
+    i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+  });
+  ctx.closePath();
+  ctx.fillStyle = 'rgba(201,169,110,0.1)';
+  ctx.fill();
+  ctx.strokeStyle = gold;
+  ctx.lineWidth = 1.5;
+  ctx.stroke();
+
+  keys.forEach((k, i) => {
+    const val = scores[k] / 10;
+    const angle = (i / n) * 2 * Math.PI - Math.PI / 2;
+    const x = cx + r * val * Math.cos(angle);
+    const y = cy + r * val * Math.sin(angle);
+    ctx.beginPath();
+    ctx.arc(x, y, 3, 0, 2 * Math.PI);
+    ctx.fillStyle = gold;
+    ctx.fill();
+  });
+
+  ctx.font = '7.5px DM Mono';
+  ctx.fillStyle = 'rgba(136,136,128,0.75)';
+  ctx.textAlign = 'center';
+  schema.forEach((d, i) => {
+    const angle = (i / n) * 2 * Math.PI - Math.PI / 2;
+    const lr = r + 26;
+    const lx = cx + lr * Math.cos(angle);
+    const ly = cy + lr * Math.sin(angle);
+    const words = d.label.toUpperCase().split(' ');
+    words.forEach((w, wi) => {
+      ctx.fillText(w, lx, ly + (wi - (words.length - 1) / 2) * 10);
+    });
+  });
+}
+
+function resetAll() {
+  schema.forEach(dim => {
+    dim.sub.forEach(s => {
+      const el = document.getElementById(`sub_${dim.key}_${s.key}`);
+      el.value = s.default;
+      updateSubSlider(dim.key, s.key, s.default);
+    });
+  });
+  document.getElementById('assetName').value = '';
+  document.getElementById('assetType').value = '';
+  document.getElementById('assetLocation').value = '';
+  document.getElementById('resultsPanel').classList.remove('visible');
+}
+</script>
+</body>
+</html>
