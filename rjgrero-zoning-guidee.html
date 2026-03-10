@@ -502,6 +502,18 @@
     line-height: 1.7;
   }
 
+  .tool-nav {
+    padding: 12px 0; border-bottom: 1px solid var(--border);
+    display: flex; gap: 16px; flex-wrap: wrap; margin-bottom: 0;
+  }
+  .tool-nav a {
+    font-size: 9px; letter-spacing: 0.2em; color: var(--text-muted); text-transform: uppercase;
+    text-decoration: none; padding: 5px 10px; border: 1px solid transparent; transition: border-color 0.2s, color 0.2s;
+  }
+  .tool-nav a.active { color: var(--gold); border-color: var(--border); }
+  .tool-nav a:not(.active):hover { color: var(--text); border-color: var(--border); }
+  .tool-nav-label { font-size: 9px; letter-spacing: 0.2em; color: var(--text-muted); text-transform: uppercase; align-self: center; margin-right: 4px; }
+
   @media (max-width: 640px) {
     .page { padding: 0 16px; }
     .zone-grid { grid-template-columns: 1fr; }
@@ -513,6 +525,11 @@
 </head>
 <body>
 <div class="page">
+  <div class="tool-nav">
+    <span class="tool-nav-label">Tools</span>
+    <a href="rjgrero-asset-scorer-v2.html">Asset Scorer</a>
+    <a href="rjgrero-zoning-guidee.html" class="active">Zoning Risk Guide</a>
+  </div>
 
   <div class="masthead">
     <div class="masthead-top">

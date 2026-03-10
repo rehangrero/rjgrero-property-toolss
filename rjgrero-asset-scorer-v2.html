@@ -240,6 +240,29 @@
   .radar-label-top { font-size: 9px; letter-spacing: 0.25em; color: var(--text-muted); text-transform: uppercase; }
   canvas#radarChart { max-width: 360px; width: 100%; }
 
+  .tool-nav { padding: 12px 0; border-bottom: 1px solid var(--border); display: flex; gap: 16px; flex-wrap: wrap; }
+  .tool-nav a {
+    font-size: 9px; letter-spacing: 0.2em; color: var(--text-muted); text-transform: uppercase;
+    text-decoration: none; padding: 5px 10px; border: 1px solid transparent; transition: border-color 0.2s, color 0.2s;
+  }
+  .tool-nav a.active { color: var(--gold); border-color: var(--border); }
+  .tool-nav a:not(.active):hover { color: var(--text); border-color: var(--border); }
+  .tool-nav-label { font-size: 9px; letter-spacing: 0.2em; color: var(--text-muted); text-transform: uppercase; align-self: center; margin-right: 4px; }
+
+  .btn-print {
+    background: transparent; color: var(--text-muted); border: 1px solid var(--border);
+    font-family: 'DM Mono', monospace; font-size: 10px; letter-spacing: 0.2em;
+    text-transform: uppercase; padding: 14px 24px; cursor: pointer;
+    transition: border-color 0.2s, color 0.2s;
+  }
+  .btn-print:hover { border-color: var(--gold); color: var(--gold); }
+
+  @media print {
+    .tool-nav, .asset-input-section, .scoring-section, .actions, footer { display: none !important; }
+    .results-panel { opacity: 1 !important; transform: none !important; border: none; }
+    body::before { display: none; }
+  }
+
   footer { padding: 28px 0 48px; border-top: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; margin-top: 48px; }
   .footer-brand { font-family: 'Cormorant Garamond', serif; font-size: 14px; color: var(--gold-dim); letter-spacing: 0.1em; }
   .footer-note { font-size: 9px; color: var(--text-muted); letter-spacing: 0.12em; text-transform: uppercase; }
@@ -253,6 +276,11 @@
 </head>
 <body>
 <div class="container">
+  <div class="tool-nav">
+    <span class="tool-nav-label">Tools</span>
+    <a href="rjgrero-asset-scorer-v2.html" class="active">Asset Scorer</a>
+    <a href="rjgrero-zoning-guidee.html">Zoning Risk Guide</a>
+  </div>
   <header>
     <div class="brand">RJ Grero Property Advisory — Asset Intelligence System</div>
     <h1>Property <span>Health Score</span></h1>
@@ -276,6 +304,7 @@
     <div class="actions">
       <button class="btn-generate" onclick="generateScore()">Generate Score Report</button>
       <button class="btn-reset" onclick="resetAll()">Reset</button>
+      <button class="btn-print" onclick="window.print()">Print / Export PDF</button>
     </div>
   </div>
 
@@ -433,7 +462,6 @@ function updateSubSlider(dimKey, subKey, val) {
   // Recompute parent
   const score = computeDimScore(dimKey);
   document.getElementById(`dimscore_${dimKey}`).innerHTML = score.toFixed(1) + '<span>/10</span>';
-  updateSliderBg(`sub_${dimKey}_${subKey}`, val);
 }
 
 function updateSliderBg(id, val) {
